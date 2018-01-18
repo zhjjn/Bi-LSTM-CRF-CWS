@@ -15,13 +15,15 @@ import os
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_data_path', "Corpora/train.txt",
+tf.app.flags.DEFINE_string('train_data_path', "Corpora/pku",
                            'Training data dir')
-tf.app.flags.DEFINE_string('test_data_path', "Corpora/test.txt",
+tf.app.flags.DEFINE_string('test_data_path', "Corpora/pku",
                            'Test data dir')
 tf.app.flags.DEFINE_string('log_dir', "Logs/seg_logs", 'The log dir')
 tf.app.flags.DEFINE_string("word2vec_path", "char_vec.txt",
                            "the word2vec data path")
+tf.app.flags.DEFINE_string("pinyin2vec_path", "pinyin_vec.txt", "the pinyin2vec data path")
+tf.app.flags.DEFINE_string("wubi2vec_path", "wubi_vec.txt", "the wubi2vec data path")
 
 tf.app.flags.DEFINE_integer("max_sentence_len", 80,
                             "max num of tokens per query")
@@ -33,13 +35,23 @@ tf.app.flags.DEFINE_integer("train_steps", 200000, "trainning steps")
 tf.app.flags.DEFINE_float("learning_rate", 0.001, "learning rate")
 
 # the word2vec words
-WORDS = None
+WORDS_char = None
+WORDS_pinyin = None
+WORDS_wubi = None
 
-def initialization(c2vPath):
+def initialization(c2vPath, p2vPath, w2vPath):
     c2v = load_w2v(c2vPath, FLAGS.embedding_size)
+    p2v = load_w2v(p2vPath, FLAGS.embedding_size)
+    w2v = load_w2v(p2vPath, FLAGS.embedding_size)
 
-    global WORDS
-    WORDS = tf.Variable(c2v, name = "words")
+    global WORDS_char
+    global WORDS_pinyin
+    global WORDS_wubi
+
+    WORDS_char = tf.Variable(c2v, name = "words")
+    WORDS_pinyin = tf.Variable(p2v, name = "pinyin")
+    WORDS_wubi = tf.Variable(w2v, name = "wubi")
+
     
     with tf.variable_scope('Softmax') as scope:
         hidden_W = tf.get_variable(
@@ -50,10 +62,18 @@ def initialization(c2vPath):
 
         hidden_b = tf.Variable(tf.zeros([FLAGS.num_tags], name = "bias"))
 
+        hidden_W_fc = tf.get_variable(
+            shape = [FLAGS.embedding_size * 3, FLAGS.embedding_size],
+            initializer = tf.truncated_normal_initializer(stddev = 0.01),
+            name = "weights_fc",
+            regularizer = tf.contrib.layers.l2_regularizer(0.001))
+
+        hidden_b_fc = tf.Variable(tf.zeros([FLAGS.embedding_size], name = "bias_fc"))
+
     inp = tf.placeholder(tf.int32,
                               shape = [None, FLAGS.max_sentence_len],
                               name = "input_placeholder")
-    return inp, hidden_W, hidden_b
+    return inp, hidden_W, hidden_b, hidden_W_fc, hidden_b_fc
 
 def GetLength(data):
     used = tf.sign(tf.abs(data))
@@ -61,9 +81,22 @@ def GetLength(data):
     length = tf.cast(length, tf.int32)
     return length
 
-def inference(X, weights, bias, reuse = None, trainMode = True):
-    word_vectors = tf.nn.embedding_lookup(WORDS, X)
-    # [batch_size, 80, 50]
+def inference_fc(X_char, X_pinyin, X_wubi, weights, bias):
+    word_vectors = tf.nn.embedding_lookup(WORDS_char, X_char)
+    pinyin_vectors = tf.nn.embedding_lookup(WORDS_pinyin, X_pinyin)
+    wubi_vectors = tf.nn.embedding_lookup(WORDS_wubi, X_wubi)
+    # [batch_size, 80, 100]
+
+    temp_vectors = tf.concat([word_vectors, pinyin_vectors, wubi_vectors], 2)
+    # [batch_size, 80, 300]
+    final_vectors = tf.matmul(temp_vectors, weights) + bias
+    # [batch_size, 80, 100]
+
+    return final_vectors
+
+def inference(X, final_vectors, weights, bias, reuse = None, trainMode = True):
+    #word_vectors = tf.nn.embedding_lookup(WORDS, X)
+    # [batch_size, 80, 100]
 
     length = GetLength(X)
     length_64 = tf.cast(length, tf.int64)
@@ -74,13 +107,13 @@ def inference(X, weights, bias, reuse = None, trainMode = True):
     with tf.variable_scope("rnn_fwbw", reuse = reuse) as scope:
         forward_output, _ = tf.nn.dynamic_rnn(
             tf.contrib.rnn.LSTMCell(FLAGS.num_hidden, reuse = reuse),
-            word_vectors,
+            final_vectors,
             dtype = tf.float32,
             sequence_length = length,
             scope = "RNN_forward")
         backward_output_, _ = tf.nn.dynamic_rnn(
             tf.contrib.rnn.LSTMCell(FLAGS.num_hidden, reuse = reuse),
-            inputs = tf.reverse_sequence(word_vectors,
+            inputs = tf.reverse_sequence(final_vectors,
                                        length_64,
                                        seq_dim = 1),
             dtype = tf.float32,
@@ -226,25 +259,34 @@ def train(total_loss):
 
 
 def main(unused_argv):
-    trainDataPath = FLAGS.train_data_path
+    trainDataPath_char = FLAGS.train_data_path+"/train_char.txt"
+    trainDataPath_pinyin = FLAGS.train_data_path+"/train_pinyin.txt"
+    trainDataPath_wubi = FLAGS.train_data_path+"/train_wubi.txt"
 
     graph = tf.Graph()
     with graph.as_default():
-        inp, hidden_W, hidden_b = initialization(FLAGS.word2vec_path)
+        inp, hidden_W, hidden_b, hidden_W_fc, hidden_b_fc = initialization(FLAGS.word2vec_path)
 
         print("train data path:", trainDataPath)
 
-        X, Y = inputs(trainDataPath)
-        tX, tY = do_load_data(FLAGS.test_data_path)
+        X_char, Y_char = inputs(trainDataPath_char)
+        X_pinyin, Y_pinyin = inputs(trainDataPath_pinyin)
+        X_wubi, Y_wubi = inputs(trainDataPath_wubi)
 
-        P, sequence_length = inference(X, hidden_W, hidden_b)
+        tX_char, tY_char = do_load_data(FLAGS.test_data_path+"/test_char.txt")
+        tX_pinyin, tY_pinyin = do_load_data(FLAGS.test_data_path+"/test_pinyin.txt")
+        tX_wubi, tY_wubi = do_load_data(FLAGS.test_data_path+"/test_wubi.txt")
+
+        final_vectors = inference_fc(X_char, X_pinyin, X_wubi, hidden_W_fc, hidden_b_fc)
+        P, sequence_length = inference(X_char, final_vectors, hidden_W, hidden_b)
 
         log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(
-            P, Y, sequence_length)
+            P, Y_char, sequence_length)
         total_loss = tf.reduce_mean(-log_likelihood)
 
         train_op = train(total_loss)
-        test_unary_score, test_sequence_length = inference(inp,
+        test_final_vectors = inference_fc(tX_char, tX_pinyin, tX_wubi, hidden_W_fc, hidden_b_fc)
+        test_unary_score, test_sequence_length = inference(inp, test_final_vectors,
            hidden_W, hidden_b, reuse = True, trainMode = False)
 
         sv = tf.train.Supervisor(graph = graph, logdir = FLAGS.log_dir)
@@ -265,7 +307,7 @@ def main(unused_argv):
 			            logs.write("[%d] loss: [%r]/n" % (step + 1, sess.run(total_loss)))
                     if (step + 1) % 1000 == 0:
                         precision = test_evaluate(sess, test_unary_score,
-                                      test_sequence_length, trainsMatrix, inp, tX, tY)
+                                      test_sequence_length, trainsMatrix, inp, tX_char, tY_char)
 		                logs.write("Accuracy: %.3f%%/n" % precision)
                     logs.close()
                 except KeyboardInterrupt as e:
