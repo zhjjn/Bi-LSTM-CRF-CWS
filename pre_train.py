@@ -13,7 +13,9 @@ import SentHandler as snhd
 import argparse
 
 def main(corpusAll,
-         vecpath,
+         char_vecpath,
+         pinyin_vecpath,
+         wubi_vecpath,
          train_file,
          test_file,
          test_file_raw,
@@ -22,7 +24,7 @@ def main(corpusAll,
          test_size,
          step):
 
-    vob = open(vecpath, 'r')
+    vob = open(char_vecpath, 'r')
     lines = vob.readlines()
     first_line = lines[0].strip()
     words_num = int(first_line.split()[0])
@@ -35,15 +37,59 @@ def main(corpusAll,
 
     vob.close()
 
+    pinyin = open(pinyin_vecpath, 'r')
+    lines = pinyin.readlines()
+    first_line = lines[0].strip()
+    words_num = int(first_line.split()[0])
+
+    pinyin_dict = {}
+    for i in xrange(words_num):
+        line = lines[i + 1].strip()
+        word = line.split()[0].decode("utf-8")
+        pinyin_dict[word] = i
+
+    pinyin.close()
+
+    wubi = open(wubi_vecpath, 'r')
+    lines = wubi.readlines()
+    first_line = lines[0].strip()
+    words_num = int(first_line.split()[0])
+
+    wubi_dict = {}
+    for i in xrange(words_num):
+        line = lines[i + 1].strip()
+        word = line.split()[0]
+        wubi_dict[word] = i
+
+    wubi.close()
+
+    fo1 = open("Encode/cl_utf8.txt", "r")
+    dic_wubi = dict()
+
+    while 1:
+      line = fo1.readline()
+      if not line:
+        break
+      line = line.split()
+      word = line[0]
+      wubi = line[2]
+      dic_wubi[word] = wubi
+
+    fo1.close()
+
     inp = open(corpusAll, 'r')
     bad_lines = 0
     cnt = 0
 
-    trop_ = open(train_file, 'w')
-    ttop_ = open(test_file, 'w')
+    trop_ = open(train_file+"train_char.txt", 'w')
+    ttop_ = open(test_file+"test_char.txt", 'w')
+    trop_pinyin_ = open(train_file + "train_pinyin.txt", "w")
+    ttop_pinyin_ = open(test_file + "test_pinyin.txt", "w")
+    trop_wubi_ = open(train_file + "train_wubi.txt", "w")
+    ttop_wubi_ = open(test_file + "test_wubi.txt", "w")
     ttrop_ = open(test_file_raw, 'w')
     ttgop_ = open(test_file_gold, 'w')
-    with trop_ as trop, ttop_ as ttop, ttrop_ as ttrop, ttgop_ as ttgop:
+    with trop_ as trop, ttop_ as ttop, trop_pinyin_ as trop_pinyin, ttop_pinyin_ as ttop_pinyin, trop_wubi_ as trop_wubi, ttop_wubi_ as ttop_wubi, ttrop_ as ttrop, ttgop_ as ttgop:
         for ind, line in enumerate(inp):
             line_pieces = []
             NE_free_line = snhd.NE_Removing(line)
@@ -53,7 +99,8 @@ def main(corpusAll,
                 bad_lines += 1
                 continue
 
-            analyzed_pieces, flag = snhd.Analyze(line_pieces, vob_dict, max_len = MAX_LEN)
+            analyzed_pieces,analyzed_pieces_pinyin, analyzed_pieces_wubi, flag = snhd.Analyze(line_pieces, vob_dict, pinyin_dict, wubi_dict, dic_wubi, max_len = MAX_LEN)
+
 
             if not flag:
                 bad_lines += 1
@@ -64,10 +111,19 @@ def main(corpusAll,
                     ttrop.write(snhd.CleanSentence(piece_raw, set([])))
                     ttgop.write(snhd.CleanSentence(piece_raw, set([]), interval = u' '))
                     ttop.write(piece)
+                for piece_raw, piece in zip(line_pieces, analyzed_pieces_pinyin):
+                    ttop_pinyin.write(piece)
+                for piece_raw, piece in zip(line_pieces, analyzed_pieces_wubi):
+                    ttop_wubi.write(piece)
                 cnt += 1
+
             else:
                 for piece in analyzed_pieces:
                     trop.write(piece)
+                for piece in analyzed_pieces_pinyin:
+                    trop_pinyin.write(piece)
+                for piece in analyzed_pieces_wubi:
+                    trop_wubi.write(piece)
 
         print "Generating finished, gave up %d bad lines" % bad_lines
 
@@ -82,19 +138,29 @@ if __name__ == '__main__':
       default = "Corpora/people2014All.txt",
       help = "corpus file")
     parser.add_argument(
-      "--vecpath",
+      "--char_vecpath",
       type = str,
       default = "char_vec.txt",
-      help = "vector's file")
+      help = "char_vector's file")
+    parser.add_argument(
+      "--pinyin_vecpath",
+      type = str,
+      default = "pinyin_vec.txt",
+      help = "pinyin_vector's file")
+    parser.add_argument(
+      "--wubi_vecpath",
+      type = str,
+      default = "wubi_vec.txt",
+      help = "wubi_vector's file")
     parser.add_argument(
       "--train_file",
       type = str,
-      default = "Corpora/train.txt",
+      default = "Corpora/",
       help = "training file will be generated here")
     parser.add_argument(
       "--test_file",
       type = str,
-      default = "Corpora/test.txt",
+      default = "Corpora/",
       help = "testing file will be generated here")
     parser.add_argument(
       "--test_file_raw",

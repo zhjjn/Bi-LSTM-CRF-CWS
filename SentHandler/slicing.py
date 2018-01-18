@@ -9,6 +9,7 @@
 # Last Modified at: 06/27/2017, by: Synrey Yee
 
 # import pdb
+from pypinyin import lazy_pinyin
 
 # NOTE the sequence of elements in this list, they have different prority.
 STOP = [u'。', u'？', u'！', u'?', u'!', u'：', u'；', u';', u'…', u'，', u',', u'、']
@@ -22,6 +23,7 @@ MAX_LEN = 100
 # 2-> 'M'
 # 3-> 'E'
 TAGS = [0, 1, 2, 3]
+
 
 # find the index of a particular symbol in line, line can be 'str' or 'list'
 def FindIndex(line, symbol):
@@ -129,16 +131,20 @@ def SliceSentence(line, out_list, cut_count, tag = False, max_len = 100):
 	return flag
 
 # labeling
-def Analyze(pieces, vob_dict, max_len = 100):
+def Analyze(pieces, vob_dict, pinyin_dict, wubi_dict, dic_wubi, max_len = 100):
 	global MAX_LEN
 	MAX_LEN = max_len
 
 	new_pieces = []
+	new_pieces_pinyin = []
+	new_pieces_wubi = []
 	for piece in pieces:
 		ustr = piece.decode("utf-8").strip()
 		lst = ustr.split()
 
 		X = []
+		X_pinyin = []
+		X_wubi = []
 		Y = []
 
 		for token in lst:
@@ -147,10 +153,28 @@ def Analyze(pieces, vob_dict, max_len = 100):
 			leng = len(word)
 			if leng > 1:
 				for j, char in enumerate(word):
+					char_pinyin = lazy_pinyin(char)
+
+					if dic_wubi.has_key(char.encode("utf8")):
+						char_wubi = dic_wubi[char.encode("utf8")]
+					else:
+						char_wubi = char.encode("utf8")
+
+
 					if vob_dict.has_key(char):
 						X.append(vob_dict[char])
 					else:
 						X.append(vob_dict[u"<UNK>"])
+
+					if pinyin_dict.has_key(char_pinyin):
+						X_pinyin.append(pinyin_dict[char_pinyin])
+					else:
+						X_pinyin.append(pinyin_dict[u"<UNK>"])
+
+					if wubi_dict.has_key(char_wubi):
+						X_wubi.append(wubi_dict[char_wubi])
+					else:
+						X_wubi.append(wubi_dict["<UNK>"])
 
 					if j == 0:
 						Y.append(TAGS[1])
@@ -159,10 +183,28 @@ def Analyze(pieces, vob_dict, max_len = 100):
 					else:
 						Y.append(TAGS[2])
 			else:
+				word_pinyin = lazy_pinyin(word)
+
+				if dic_wubi.has_key(word.encode("utf8")):
+					word_wubi = dic_wubi[word.encode("utf8")]
+				else:
+					word_wubi = word.encode("utf8")
+
+
 				if vob_dict.has_key(word):
 					X.append(vob_dict[word])
 				else:
 					X.append(vob_dict[u"<UNK>"])
+
+				if pinyin_dict.has_key(word_pinyin):
+					X_pinyin.append(pinyin_dict[word_pinyin])
+				else:
+					X_pinyin.append(pinyin_dict[u"<UNK>"])
+
+				if wubi_dict.has_key(word_wubi):
+					X_wubi.append(wubi_dict[word_wubi])
+				else:
+					X_wubi.append(wubi_dict["<UNK>"])
 
 				Y.append(TAGS[0])
 
@@ -172,8 +214,22 @@ def Analyze(pieces, vob_dict, max_len = 100):
 		if length > MAX_LEN:
 			return [], False
 
+		length = len(X_pinyin)
+		if length != len(Y):
+			return [], False
+		if length > MAX_LEN:
+			return [], False
+
+		length = len(X_wubi)
+		if length != len(Y):
+			return [], False
+		if length > MAX_LEN:
+			return [], False
+
 		for _ in xrange(length, MAX_LEN):
 			X.append(0)
+			X_pinyin.append(0)
+			X_wubi.append(0)
 			Y.append(0)
 
 		strX = ' '.join(str(x) for x in X)
@@ -181,7 +237,17 @@ def Analyze(pieces, vob_dict, max_len = 100):
 		new_piece = strX + ' ' + strY + '\n'
 		new_pieces.append(new_piece)
 
-	return new_pieces, True
+		strX_pinyin = ' '.join(str(x) for x in X_pinyin)
+		strY = ' '.join(str(y) for y in Y)
+		new_piece_pinyin = strX_pinyin + ' ' + strY + '\n'
+		new_pieces_pinyin.append(new_piece_pinyin)
+
+		strX_wubi = ' '.join(str(x) for x in X_wubi)
+		strY = ' '.join(str(y) for y in Y)
+		new_piece_wubi = strX_wubi + ' ' + strY + '\n'
+		new_pieces_wubi.append(new_piece_wubi)
+
+	return new_pieces, new_pieces_pinyin, new_pieces_wubi, True
 
 # char pos labeling
 def POS_Analyze(pieces, vob_dict, pos_dict, max_len = 100):
