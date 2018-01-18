@@ -190,6 +190,6 @@ if __name__ == '__main__':
       help = "program chooses 1 test sentence for every <step> steps")
 
     args = parser.parse_args()
-    main(args.corpusAll, args.vecpath, args.train_file,
+    main(args.corpusAll, args.char_vecpath, args.pinyin_vecpath, args.wubi_vecpath, args.train_file,
         args.test_file, args.test_file_raw, args.test_file_gold,
         args.MAX_LEN, args.test_size, args.step)
