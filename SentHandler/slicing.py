@@ -153,7 +153,7 @@ def Analyze(pieces, vob_dict, pinyin_dict, wubi_dict, dic_wubi, max_len = 100):
 			leng = len(word)
 			if leng > 1:
 				for j, char in enumerate(word):
-					char_pinyin = lazy_pinyin(char)
+					char_pinyin = lazy_pinyin(char)[0]
 
 					if dic_wubi.has_key(char.encode("utf8")):
 						char_wubi = dic_wubi[char.encode("utf8")]
@@ -183,7 +183,10 @@ def Analyze(pieces, vob_dict, pinyin_dict, wubi_dict, dic_wubi, max_len = 100):
 					else:
 						Y.append(TAGS[2])
 			else:
-				word_pinyin = lazy_pinyin(word)
+				if word=='':
+					word_pinyin=''
+				else:
+					word_pinyin = lazy_pinyin(word)[0]
 
 				if dic_wubi.has_key(word.encode("utf8")):
 					word_wubi = dic_wubi[word.encode("utf8")]
