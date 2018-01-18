@@ -180,7 +180,7 @@ def CleanSentence(line, tag_set, interval = u'', breakword = False):
 def All2oneFile(rootDir, out_filename):
 	with open(out_filename, "w") as opt:
 		for dirName, subdirList, fileList in os.walk(rootDir):
-			curDir = os.path.join(rootDir, dirName)
+			curDir = os.path.join(dirName)
 			for file in fileList:
 				line_raw_list = []
 				line_list = []
