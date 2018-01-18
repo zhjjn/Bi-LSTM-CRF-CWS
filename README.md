@@ -44,8 +44,8 @@ Have tensorflow 1.2 installed.
     
 * Generate Training Files <br>
     
-    *python pre_train.py --corpusAll Corpora/pku/train-all.txt --vecpath char_vec.txt \\<br>
-    --train_file Corpora/pku/train.txt --test_file Corpora/pku/test.txt*
+    *python pre_train.py --corpusAll Corpora/pku/train-all.txt --char_vecpath char_vec.txt \\<br>
+    --pinyin_vecpath pinyin_vec.txt --wubi_vecpath wubi_vec.txt --train_file Corpora/pku/ --test_file Corpora/pku/*
     
     Run *python pre_train.py -h* to see more details.
     
