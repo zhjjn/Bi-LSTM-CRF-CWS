@@ -213,21 +213,21 @@ def Analyze(pieces, vob_dict, pinyin_dict, wubi_dict, dic_wubi, max_len = 100):
 
 		length = len(X)
 		if length != len(Y):
-			return [], False
+			return [], [], [], False
 		if length > MAX_LEN:
-			return [], False
+			return [], [], [], False
 
 		length = len(X_pinyin)
 		if length != len(Y):
-			return [], False
+			return [], [], [], False
 		if length > MAX_LEN:
-			return [], False
+			return [], [], [], False
 
 		length = len(X_wubi)
 		if length != len(Y):
-			return [], False
+			return [], [], [], False
 		if length > MAX_LEN:
-			return [], False
+			return [], [], [], False
 
 		for _ in xrange(length, MAX_LEN):
 			X.append(0)
