@@ -52,6 +52,6 @@ Have tensorflow 1.2 installed.
 * Training <br>
     
     *python ./CWSTrain/lstm_crf_train.py --train_data_path Corpora/pku/train.txt \\<br>
-    --test_data_path Corpora/pku/test.txt --word2vec_path char_vec.txt*
+    --test_data_path Corpora/pku/test.txt --word2vec_path char_vec.txt --log_dir Logs/pku*
     
     Arguments of *lstm_cnn_train.py* are set by **tf.app.flags**. See the file for more args' configurations.
