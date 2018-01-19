@@ -52,7 +52,7 @@ def initialization(c2vPath, p2vPath, w2vPath):
     WORDS_pinyin = tf.Variable(p2v, name = "pinyin")
     WORDS_wubi = tf.Variable(w2v, name = "wubi")
 
-    
+
     with tf.variable_scope('Softmax') as scope:
         hidden_W = tf.get_variable(
             shape = [FLAGS.num_hidden * 2, FLAGS.num_tags],
@@ -70,10 +70,16 @@ def initialization(c2vPath, p2vPath, w2vPath):
 
         hidden_b_fc = tf.Variable(tf.zeros([FLAGS.embedding_size], name = "bias_fc"))
 
-    inp = tf.placeholder(tf.int32,
+    inp_char = tf.placeholder(tf.int32,
                               shape = [None, FLAGS.max_sentence_len],
-                              name = "input_placeholder")
-    return inp, hidden_W, hidden_b, hidden_W_fc, hidden_b_fc
+                              name = "input_placeholder_char")
+    inp_pinyin = tf.placeholder(tf.int32,
+                              shape = [None, FLAGS.max_sentence_len],
+                              name = "input_placeholder_pinyin")
+    inp_wubi = tf.placeholder(tf.int32,
+                              shape = [None, FLAGS.max_sentence_len],
+                              name = "input_placeholder_wubi")
+    return inp_char, inp_pinyin, inp_wubi, hidden_W, hidden_b, hidden_W_fc, hidden_b_fc
 
 def GetLength(data):
     used = tf.sign(tf.abs(data))
@@ -89,9 +95,13 @@ def inference_fc(X_char, X_pinyin, X_wubi, weights, bias):
 
     temp_vectors = tf.concat([word_vectors, pinyin_vectors, wubi_vectors], 2)
     # [batch_size, 80, 300]
-    final_vectors = tf.matmul(temp_vectors, weights) + bias
-    # [batch_size, 80, 100]
 
+    reshaped_vectors = tf.reshape(temp_vectors, [-1, FLAGS.embedding_size * 3])
+    #print (reshaped_vectors)
+    final_vectors = tf.nn.relu((tf.matmul(reshaped_vectors, weights) + bias))
+    final_vectors = tf.reshape(final_vectors, [-1, FLAGS.max_sentence_len, FLAGS.embedding_size])
+    # [batch_size, 80, 100]
+    print (final_vectors)
     return final_vectors
 
 def inference(X, final_vectors, weights, bias, reuse = None, trainMode = True):
@@ -123,7 +133,7 @@ def inference(X, final_vectors, weights, bias, reuse = None, trainMode = True):
     backward_output = tf.reverse_sequence(backward_output_,
                                           length_64,
                                           seq_dim = 1)
-    
+
     output = tf.concat([forward_output, backward_output], 2)
     # [batch_size, 80, 200]
     output = tf.reshape(output, [-1, FLAGS.num_hidden * 2])
@@ -211,11 +221,11 @@ def read_csv(batch_size, file_name):
                                   capacity=batch_size * 50,
                                   min_after_dequeue=batch_size)
 
-def test_evaluate(sess, unary_score, test_sequence_length, transMatrix, inp, tX, tY):
+def test_evaluate(sess, unary_score, test_sequence_length, transMatrix, inp_char, inp_pinyin, inp_wubi, tX_char, tX_pinyin, tX_wubi, tY):
     totalEqual = 0
     batchSize = FLAGS.batch_size
-    totalLen = tX.shape[0]
-    numBatch = int((tX.shape[0] - 1) / batchSize) + 1
+    totalLen = tX_char.shape[0]
+    numBatch = int((tX_char.shape[0] - 1) / batchSize) + 1
     correct_labels = 0
     total_labels = 0
 
@@ -225,7 +235,9 @@ def test_evaluate(sess, unary_score, test_sequence_length, transMatrix, inp, tX,
             endOff = totalLen
 
         y = tY[i * batchSize:endOff]
-        feed_dict = {inp: tX[i * batchSize:endOff]}
+        feed_dict = {inp_char: tX_char[i * batchSize:endOff], inp_pinyin:tX_pinyin[i * batchSize:endOff], inp_wubi: tX_wubi[i * batchSize:endOff]}
+        #feed_dict_pinyin = {inp_pinyin: tX_pinyin[i * batchSize:endOff]}
+        #feed_dict_wubi = {inp_wubi: tX_wubi[i * batchSize:endOff]}
         unary_score_val, test_sequence_length_val = sess.run(
             [unary_score, test_sequence_length], feed_dict)
 
@@ -265,9 +277,9 @@ def main(unused_argv):
 
     graph = tf.Graph()
     with graph.as_default():
-        inp, hidden_W, hidden_b, hidden_W_fc, hidden_b_fc = initialization(FLAGS.word2vec_path)
+        inp_char, inp_pinyin, inp_wubi, hidden_W, hidden_b, hidden_W_fc, hidden_b_fc = initialization(FLAGS.word2vec_path, FLAGS.pinyin2vec_path, FLAGS.wubi2vec_path)
 
-        print("train data path:", trainDataPath)
+        print("train data path:", FLAGS.train_data_path)
 
         X_char, Y_char = inputs(trainDataPath_char)
         X_pinyin, Y_pinyin = inputs(trainDataPath_pinyin)
@@ -285,8 +297,8 @@ def main(unused_argv):
         total_loss = tf.reduce_mean(-log_likelihood)
 
         train_op = train(total_loss)
-        test_final_vectors = inference_fc(tX_char, tX_pinyin, tX_wubi, hidden_W_fc, hidden_b_fc)
-        test_unary_score, test_sequence_length = inference(inp, test_final_vectors,
+        test_final_vectors = inference_fc(inp_char, inp_pinyin, inp_wubi, hidden_W_fc, hidden_b_fc)
+        test_unary_score, test_sequence_length = inference(inp_char, test_final_vectors,
            hidden_W, hidden_b, reuse = True, trainMode = False)
 
         sv = tf.train.Supervisor(graph = graph, logdir = FLAGS.log_dir)
@@ -300,15 +312,15 @@ def main(unused_argv):
                     _, trainsMatrix = sess.run(
                         [train_op, transition_params])
                     # for debugging and learning purposes, see how the loss gets decremented thru training steps
-		            logs = open(FLAGS.log_dir + '/logs_output.txt', "a")
+                    logs = open(FLAGS.log_dir + '/logs_output.txt', "a")
                     if (step + 1) % 100 == 0:
                         print("[%d] loss: [%r]" %
                               (step + 1, sess.run(total_loss)))
-			            logs.write("[%d] loss: [%r]/n" % (step + 1, sess.run(total_loss)))
+                        logs.write("[%d] loss: [%r]/n" % (step + 1, sess.run(total_loss)))
                     if (step + 1) % 1000 == 0:
                         precision = test_evaluate(sess, test_unary_score,
-                                      test_sequence_length, trainsMatrix, inp, tX_char, tY_char)
-		                logs.write("Accuracy: %.3f%%/n" % precision)
+                                      test_sequence_length, trainsMatrix, inp_char, inp_pinyin, inp_wubi, tX_char, tX_pinyin, tX_wubi, tY_char)
+                        logs.write("Accuracy: %.3f%%/n" % precision)
                     logs.close()
                 except KeyboardInterrupt as e:
                     sv.saver.save(sess,
