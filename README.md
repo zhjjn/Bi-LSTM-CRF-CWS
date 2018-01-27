@@ -58,7 +58,7 @@ Have tensorflow 1.2 installed.
 ## Segmentation
 * Freeze graph <br>
 
-    *python tools/freeze_graph.py --input_graph Logs/seg_logs/graph.pbtxt --input_checkpoint Logs/seg_logs/model.ckpt --output_node_names "input_placeholder, transitions, Reshape_7" --output_graph Models/lstm_crf_model.pbtxt*
+    *python tools/freeze_graph.py --input_graph Logs/msr/graph.pbtxt --input_checkpoint Logs/msr/model.ckpt --output_node_names "input_placeholder, transitions, Reshape_7" --output_graph Models/fc_lstm_crf_model.pbtxt*
 
     Build model for segmentation.
     
@@ -75,6 +75,6 @@ Have tensorflow 1.2 installed.
     
 * PRF Scoring <br>
     
-    *python PRF_Score.py Results/cnn_result.txt Corpora/test_gold.txt*
+    *python PRF_Score.py Results/crf_result.txt Corpora/test_gold.txt*
     
     Result files are put in directory **Results/**.
