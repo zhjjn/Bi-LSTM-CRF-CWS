@@ -58,7 +58,7 @@ Have tensorflow 1.2 installed.
 ## Segmentation
 * Freeze graph <br>
 
-    *python tools/freeze_graph.py --input_graph Logs/msr/graph.pbtxt --input_checkpoint Logs/msr/model.ckpt --output_node_names "input_placeholder, transitions, Reshape_7" --output_graph Models/fc_lstm_crf_model.pbtxt*
+    *python tools/freeze_graph.py --input_graph Logs/msr/graph.pbtxt --input_checkpoint Logs/msr/model.ckpt --output_node_names "input_placeholder_char, input_placeholder_pinyin, input_placeholder_wubi, transitions, Reshape_7" --output_graph Models/fc_lstm_crf_model.pbtxt*
 
     Build model for segmentation.
     
