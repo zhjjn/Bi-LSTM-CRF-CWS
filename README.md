@@ -58,7 +58,7 @@ Have tensorflow 1.2 installed.
 ## Segmentation
 * Dump Vocabulary <br>
 
-    *python tools/vob_dump.py --vecpath char_vec.txt --dump_path Models/vob_dump.pk* <br>
+    *python tools/vob_dump.py --char_vecpath char_vec.txt --pinyin_vecpath pinyin_vec.txt --wubi_vecpath wubi_vec.txt --char_dump_path Models/char_dump.pk --pinyin_dump_path Models/pinyin_dump.pk --wubi_dump_path Models/wubi_dump.pk* <br>
 
     This step is **neccessary** for the seg model.
 
