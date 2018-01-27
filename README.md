@@ -54,3 +54,21 @@ Have tensorflow 1.2 installed.
     *python ./CWSTrain/fc_lstm_crf_train.py --train_data_path Corpora/msr --test_data_path Corpora/msr --word2vec_path char_vec.txt --pinyin2vec_path pinyin_vec.txt --wubi2vec_path wubi_vec.txt --log_dir Logs/msr*
     
     Arguments of *lstm_cnn_train.py* are set by **tf.app.flags**. See the file for more args' configurations.
+
+## Segmentation
+* Dump Vocabulary <br>
+
+    *python tools/vob_dump.py --vecpath char_vec.txt --dump_path Models/vob_dump.pk* <br>
+
+    This step is **neccessary** for the seg model.
+
+* Seg Script <br>
+
+    Use file **tools/crf_seg.py** and file **tools/cnn_seg.py**. You may refer to the files about detailed parameters config. <br>
+    For default, at the root path of this repository, *python tools/crf_seg.py* or *python tools/cnn_seg.py* will work.
+    
+* PRF Scoring <br>
+    
+    *python PRF_Score.py Results/cnn_result.txt Corpora/test_gold.txt*
+    
+    Result files are put in directory **Results/**.
