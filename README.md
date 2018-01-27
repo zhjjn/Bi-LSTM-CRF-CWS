@@ -56,6 +56,12 @@ Have tensorflow 1.2 installed.
     Arguments of *lstm_cnn_train.py* are set by **tf.app.flags**. See the file for more args' configurations.
 
 ## Segmentation
+* Freeze graph <br>
+
+    *python tools/freeze_graph.py --input_graph Logs/seg_logs/graph.pbtxt --input_checkpoint Logs/seg_logs/model.ckpt --output_node_names "input_placeholder, transitions, Reshape_7" --output_graph Models/lstm_crf_model.pbtxt*
+
+    Build model for segmentation.
+    
 * Dump Vocabulary <br>
 
     *python tools/vob_dump.py --char_vecpath char_vec.txt --pinyin_vecpath pinyin_vec.txt --wubi_vecpath wubi_vec.txt --char_dump_path Models/char_dump.pk --pinyin_dump_path Models/pinyin_dump.pk --wubi_dump_path Models/wubi_dump.pk* <br>
