@@ -71,7 +71,7 @@ Have tensorflow 1.2 installed.
 
     Use file **tools/crf_seg.py** and file **tools/cnn_seg.py**. You may refer to the files about detailed parameters config. <br>
     For default, at the root path of this repository, *python tools/crf_seg.py* or *python tools/cnn_seg.py* will work.<br>
-    *python tools/crf_seg.py --test_data /Corpora/msr/test_raw.txt*
+    *python tools/crf_seg.py --test_data Corpora/msr/test_raw.txt*
     
 * PRF Scoring <br>
     
