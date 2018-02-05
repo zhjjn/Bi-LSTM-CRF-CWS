@@ -57,7 +57,7 @@ Have tensorflow 1.2 installed.
 ## Segmentation
 * Freeze graph <br>
 
-    *python tools/freeze_graph.py --input_graph Logs/msr/graph.pbtxt --input_checkpoint Logs/msr/model.ckpt --output_node_names "input_placeholder_char,input_placeholder_pinyin,input_placeholder_wubi,transitions,Reshape_11" --output_graph Models/fc_lstm_crf_model.pbtxt*
+    *python tools/freeze_graph.py --input_graph Logs_fc_lstm3/msr/graph.pbtxt --input_checkpoint Logs_fc_lstm3/msr/model.ckpt --output_node_names "input_placeholder_char,input_placeholder_pinyin,input_placeholder_wubi,transitions,Reshape_11" --output_graph Models/fc_lstm3_crf_model_msr.pbtxt*
 
     Build model for segmentation.
     
@@ -71,10 +71,10 @@ Have tensorflow 1.2 installed.
 
     Use file **tools/crf_seg.py** and file **tools/cnn_seg.py**. You may refer to the files about detailed parameters config. <br>
     For default, at the root path of this repository, *python tools/crf_seg.py* or *python tools/cnn_seg.py* will work.<br>
-    *python tools/crf_seg.py --test_data Corpora/msr/test_raw.txt*
+    *python tools/crf_seg.py --test_data Corpora/msr/test_raw.txt --model_path Models/fc_lstm3_crf_model_msr.pbtxt --result_path Results/crf_result_msr.txt*
     
 * PRF Scoring <br>
     
-    *python PRF_Score.py Results/crf_result.txt Corpora/msr/test_gold.txt*
+    *python PRF_Score.py Results/crf_result_msr.txt Corpora/msr/test_gold.txt*
     
     Result files are put in directory **Results/**.
