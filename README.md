@@ -51,6 +51,7 @@ Have tensorflow 1.2 installed.
 * Training <br>
     
     *python ./CWSTrain/fc_lstm_crf_train.py --train_data_path Corpora/msr --test_data_path Corpora/msr --word2vec_path char_vec.txt --pinyin2vec_path pinyin_vec.txt --wubi2vec_path wubi_vec.txt --log_dir Logs_fc/msr --embedding_size 256 --batch_size 256*
+    
     *python ./CWSTrain/share_lstm3_crf_train.py --train_data_path Corpora/msr --test_data_path Corpora/msr --word2vec_path char_vec.txt --pinyin2vec_path pinyin_vec.txt --wubi2vec_path wubi_vec.txt --log_dir Logs_share_lstm3/msr --embedding_size 256 --batch_size 256*
     
     Arguments of *lstm_cnn_train.py* are set by **tf.app.flags**. See the file for more args' configurations.
