@@ -31,14 +31,11 @@ Have tensorflow 1.2 installed.
     *python SentHandler/replace_unk.py pre_vocab_wubi.txt pre_wubi_for_w2v.txt wubi_for_w2v.txt*
     
     
-    *./third_party/word2vec -train chars_for_w2v.txt -output char_vec.txt \\<br>
-    -size 100 -sample 1e-4 -negative 0 -hs 1 -binary 0 -iter 5*
+    *./third_party/word2vec -train chars_for_w2v.txt -output char_vec.txt -size 100 -sample 1e-4 -negative 0 -hs 1 -binary 0 -iter 5*
     
-    *./third_party/word2vec -train pinyin_for_w2v.txt -output pinyin_vec.txt \\<br>
-    -size 100 -sample 1e-4 -negative 0 -hs 1 -binary 0 -iter 5*
+    *./third_party/word2vec -train pinyin_for_w2v.txt -output pinyin_vec.txt -size 100 -sample 1e-4 -negative 0 -hs 1 -binary 0 -iter 5*
     
-    *./third_party/word2vec -train wubi_for_w2v.txt -output wubi_vec.txt \\<br>
-    -size 100 -sample 1e-4 -negative 0 -hs 1 -binary 0 -iter 5*
+    *./third_party/word2vec -train wubi_for_w2v.txt -output wubi_vec.txt -size 100 -sample 1e-4 -negative 0 -hs 1 -binary 0 -iter 5*
     
     First off, the file **word2vec.c** in third_party directory should be compiled (see third_party/compile_w2v.sh). Then word2vec counts the characters which have a frequency more than 3 and saves them into file **pre_vocab.txt**. After replacing with **"UNK"** the words that are not in pre_vocab.txt, finally, word2vec training begins.
     
