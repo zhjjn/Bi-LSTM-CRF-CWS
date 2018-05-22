@@ -65,18 +65,23 @@ Have tensorflow 1.2 installed.
     
     *python ./CWSTrain/nowubi_fc_lstm3_crf_train.py --train_data_path Corpora/msr --test_data_path Corpora/msr --word2vec_path char_vec.txt --pinyin2vec_path pinyin_vec.txt --log_dir Logs_nowubi/msr --embedding_size 256 --batch_size 256*
     
-    Arguments of *lstm_cnn_train.py* are set by **tf.app.flags**. See the file for more args' configurations.
+    When you need to use other corpora, just change the train_data_path, test_data_path and make a new log directory. Arguments of *lstm_cnn_train.py* are set by **tf.app.flags**. See the file for more args' configurations.
 
 ## Segmentation
 * Freeze graph <br>
 
     *python tools/freeze_graph.py --input_graph Logs_fc_lstm3/msr/graph.pbtxt --input_checkpoint Logs_fc_lstm3/msr/model.ckpt --output_node_names "input_placeholder_char,input_placeholder_pinyin,input_placeholder_wubi,transitions,Reshape_11" --output_graph Models/fc_lstm3_crf_model_msr.pbtxt*
+    
+    *python tools/freeze_graph.py --input_graph Logs_nopy/msr/graph.pbtxt --input_checkpoint Logs_nopy/msr/model.ckpt --output_node_names "input_placeholder_char,input_placeholder_wubi,transitions,Reshape_11" --output_graph Models/nopy_fc_lstm3_crf_model_msr.pbtxt*
+    
+    *python tools/freeze_graph.py --input_graph Logs_nowubi/msr/graph.pbtxt --input_checkpoint Logs_nowubi/msr/model.ckpt --output_node_names "input_placeholder_char,input_placeholder_pinyin,transitions,Reshape_11" --output_graph Models/nowubi_fc_lstm3_crf_model_msr.pbtxt*
 
     Build model for segmentation.
     
 * Dump Vocabulary <br>
 
     *python tools/vob_dump.py --char_vecpath char_vec.txt --pinyin_vecpath pinyin_vec.txt --wubi_vecpath wubi_vec.txt --char_dump_path Models/char_dump.pk --pinyin_dump_path Models/pinyin_dump.pk --wubi_dump_path Models/wubi_dump.pk* <br>
+    *python tools/vob_dump.py --char_vecpath char_vec300.txt --pinyin_vecpath pinyin_vec300.txt --wubi_vecpath wubi_vec300.txt --char_dump_path Models/char_dump300.pk --pinyin_dump_path Models/pinyin_dump300.pk --wubi_dump_path Models/wubi_dump300.pk* <br>
 
     This step is **neccessary** for the seg model.
 
@@ -85,6 +90,10 @@ Have tensorflow 1.2 installed.
     Use file **tools/crf_seg.py** and file **tools/cnn_seg.py**. You may refer to the files about detailed parameters config. <br>
     For default, at the root path of this repository, *python tools/crf_seg.py* or *python tools/cnn_seg.py* will work.<br>
     *python tools/crf_seg.py --test_data Corpora/msr/test_raw.txt --model_path Models/fc_lstm3_crf_model_msr.pbtxt --result_path Results/crf_result_msr.txt*
+    
+    *python tools/fc_lstm3_crf_seg_nopy.py --test_data Corpora/msr/test_raw.txt --model_path Models/nopy_fc_lstm3_crf_model_msr.pbtxt --result_path Results/nopy_crf_result_msr.txt*
+    
+    *python tools/fc_lstm3_crf_seg_nowubi.py --test_data Corpora/msr/test_raw.txt --model_path Models/nowubi_fc_lstm3_crf_model_msr.pbtxt --result_path Results/nowubi_crf_result_msr.txt*
     
 * PRF Scoring <br>
     
